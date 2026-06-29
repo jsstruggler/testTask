@@ -1,0 +1,48 @@
+:root {
+  --font-inter: 'Inter', sans-serif;
+  
+  /* Additional Premium Variables */
+  --primary-glow: rgba(94, 106, 210, 0.3);
+  --shadow-glow: 0 0 20px var(--primary-glow);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-inter), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  
+  /* Subtle animated gradient background behind the layout */
+  background-color: #0f1115;
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(94, 106, 210, 0.05), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(58, 183, 149, 0.03), transparent 25%);
+  background-attachment: fixed;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Typography Classes */
+.h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 1.5rem;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 1rem;
+}

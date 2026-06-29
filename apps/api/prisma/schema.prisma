@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Document ────────────────────────────────────────────────────────────────
+
+model Document {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // 'audience' | 'product'
+  status    String   @default("new") // 'new' | 'applied' | 'outdated'
+  createdAt DateTime @default(now())
+
+  audiences AudienceDocument[]
+
+  @@index([type])
+  @@index([status])
+}
+
+// ─── Audience ────────────────────────────────────────────────────────────────
+
+model Audience {
+  id              String @id @default(uuid())
+  name            String
+  interviewStatus String @default("new") // 'new' | 'applied' | 'outdated'
+
+  documents AudienceDocument[]
+  vpcs      Vpc[]
+  pages     PageAudience[]
+}
+
+// ─── Join: Audience ↔ Document (many-to-many) ────────────────────────────────
+
+model AudienceDocument {
+  audienceId String
+  documentId String
+
+  audience Audience @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@id([audienceId, documentId])
+  @@index([documentId])
+}
+
+// ─── VPC (Value Proposition Canvas) ──────────────────────────────────────────
+
+model Vpc {
+  id         String @id @default(uuid())
+  name       String
+  status     String @default("new") // 'new' | 'applied' | 'outdated'
+  fields     String @default("{}") // JSON: { jobs, pains, gains, products, painRelievers, gainCreators }
+  audienceId String
+
+  audience Audience     @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+  sections SectionVpc[]
+
+  @@index([audienceId])
+  @@index([status])
+}
+
+// ─── Page ────────────────────────────────────────────────────────────────────
+
+model Page {
+  id   String @id @default(uuid())
+  name String
+
+  audiences PageAudience[]
+  sections  Section[]
+}
+
+// ─── Join: Page ↔ Audience (many-to-many) ────────────────────────────────────
+
+model PageAudience {
+  pageId     String
+  audienceId String
+
+  page     Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  audience Audience @relation(fields: [audienceId], references: [id], onDelete: Cascade)
+
+  @@id([pageId, audienceId])
+  @@index([audienceId])
+}
+
+// ─── Section ─────────────────────────────────────────────────────────────────
+
+model Section {
+  id     String @id @default(uuid())
+  name   String
+  status String @default("new") // 'new' | 'applied' | 'outdated'
+  pageId String
+
+  page Page         @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  vpcs SectionVpc[]
+
+  @@index([pageId])
+  @@index([status])
+}
+
+// ─── Join: Section ↔ VPC (many-to-many) ──────────────────────────────────────
+
+model SectionVpc {
+  sectionId String
+  vpcId     String
+
+  section Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  vpc     Vpc     @relation(fields: [vpcId], references: [id], onDelete: Cascade)
+
+  @@id([sectionId, vpcId])
+  @@index([vpcId])
+}
