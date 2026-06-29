@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Document ────────────────────────────────────────────────────────────────
+
 
 model Document {
   id        String   @id @default(uuid())
@@ -22,7 +22,7 @@ model Document {
   @@index([status])
 }
 
-// ─── Audience ────────────────────────────────────────────────────────────────
+
 
 model Audience {
   id              String @id @default(uuid())
@@ -34,7 +34,7 @@ model Audience {
   pages     PageAudience[]
 }
 
-// ─── Join: Audience ↔ Document (many-to-many) ────────────────────────────────
+
 
 model AudienceDocument {
   audienceId String
@@ -47,13 +47,13 @@ model AudienceDocument {
   @@index([documentId])
 }
 
-// ─── VPC (Value Proposition Canvas) ──────────────────────────────────────────
+
 
 model Vpc {
   id         String @id @default(uuid())
   name       String
-  status     String @default("new") // 'new' | 'applied' | 'outdated'
-  fields     String @default("{}") // JSON: { jobs, pains, gains, products, painRelievers, gainCreators }
+  status     String @default("new") 
+  fields     String @default("{}") 
   audienceId String
 
   audience Audience     @relation(fields: [audienceId], references: [id], onDelete: Cascade)
@@ -63,7 +63,7 @@ model Vpc {
   @@index([status])
 }
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+
 
 model Page {
   id   String @id @default(uuid())
@@ -73,7 +73,7 @@ model Page {
   sections  Section[]
 }
 
-// ─── Join: Page ↔ Audience (many-to-many) ────────────────────────────────────
+
 
 model PageAudience {
   pageId     String
@@ -86,7 +86,7 @@ model PageAudience {
   @@index([audienceId])
 }
 
-// ─── Section ─────────────────────────────────────────────────────────────────
+
 
 model Section {
   id     String @id @default(uuid())
@@ -101,7 +101,7 @@ model Section {
   @@index([status])
 }
 
-// ─── Join: Section ↔ VPC (many-to-many) ──────────────────────────────────────
+
 
 model SectionVpc {
   sectionId String

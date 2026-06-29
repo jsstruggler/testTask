@@ -23,13 +23,13 @@ export class ImpactService {
   ) {}
 
   async calculateImpact(document: DocumentEntity): Promise<ImpactResult> {
-    // 1. Find all audiences linked to this document
+
     const affectedAudiences = await this.audiencesService.findByDocumentId(document.id);
 
-    // 2. Collect all VPCs from affected audiences
+
     const affectedVpcs = affectedAudiences.flatMap((a) => a.vpcs);
 
-    // 3. Find all pages linked to affected audiences
+
     const audienceIds = affectedAudiences.map((a) => a.id);
     const affectedPages =
       audienceIds.length > 0

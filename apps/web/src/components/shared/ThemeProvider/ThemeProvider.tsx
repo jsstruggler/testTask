@@ -3,7 +3,7 @@
 import { ConfigProvider, theme } from 'antd';
 import { ReactNode } from 'react';
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ConfigProvider
       theme={{

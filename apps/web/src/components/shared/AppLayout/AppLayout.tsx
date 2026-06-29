@@ -6,7 +6,7 @@ const { Content } = Layout;
 import styles from './AppLayout.module.scss';
 import { ReactNode } from 'react';
 
-export function AppLayout({ children }: { children: ReactNode }) {
+export const AppLayout = ({ children }: { children: ReactNode }) => {
   return (
     <Layout className={styles.layout}>
       <Layout>

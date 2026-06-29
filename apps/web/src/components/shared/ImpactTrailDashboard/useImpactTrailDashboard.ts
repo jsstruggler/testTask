@@ -36,7 +36,7 @@ export const useImpactTrailDashboard = () => {
 
   const isLoading = isLoadingDocs || isLoadingAuds || isLoadingPages;
 
-  // Impact Trail Calculation
+
   const { highlightedDocs, highlightedAudiences, highlightedPages } = useMemo(() => {
     const docs = new Set<string>();
     const auds = new Set<string>();

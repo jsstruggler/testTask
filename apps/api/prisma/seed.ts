@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean existing data
+
   await prisma.sectionVpc.deleteMany();
   await prisma.pageAudience.deleteMany();
   await prisma.audienceDocument.deleteMany();
@@ -15,7 +15,7 @@ async function main() {
 
   console.warn('🧹 Cleaned existing data');
 
-  // ─── Documents ───────────────────────────────────────────────────────────
+
 
   const doc1 = await prisma.document.create({
     data: {
@@ -55,7 +55,7 @@ async function main() {
 
   console.warn(`📄 Created ${4} documents`);
 
-  // ─── Audiences ───────────────────────────────────────────────────────────
+
 
   const audience1 = await prisma.audience.create({
     data: {
@@ -83,7 +83,6 @@ async function main() {
 
   console.warn(`👥 Created ${3} audiences`);
 
-  // ─── Audience ↔ Document relations ───────────────────────────────────────
 
   await prisma.audienceDocument.createMany({
     data: [
@@ -97,7 +96,7 @@ async function main() {
 
   console.warn('🔗 Linked audiences to documents');
 
-  // ─── VPCs ────────────────────────────────────────────────────────────────
+
 
   const vpc1 = await prisma.vpc.create({
     data: {
@@ -152,7 +151,7 @@ async function main() {
 
   console.warn(`🎯 Created ${3} VPCs`);
 
-  // ─── Pages ───────────────────────────────────────────────────────────────
+
 
   const page1 = await prisma.page.create({
     data: {
@@ -170,7 +169,7 @@ async function main() {
 
   console.warn(`📃 Created ${2} pages`);
 
-  // ─── Page ↔ Audience relations ───────────────────────────────────────────
+
 
   await prisma.pageAudience.createMany({
     data: [
@@ -182,7 +181,6 @@ async function main() {
 
   console.warn('🔗 Linked pages to audiences');
 
-  // ─── Sections ────────────────────────────────────────────────────────────
 
   const section1 = await prisma.section.create({
     data: {
@@ -213,7 +211,6 @@ async function main() {
 
   console.warn(`📑 Created ${3} sections`);
 
-  // ─── Section ↔ VPC relations ─────────────────────────────────────────────
 
   await prisma.sectionVpc.createMany({
     data: [
@@ -226,7 +223,6 @@ async function main() {
 
   console.warn('🔗 Linked sections to VPCs');
 
-  // ─── Summary ─────────────────────────────────────────────────────────────
 
   console.warn('\n✅ Seed completed successfully!');
   console.warn('─────────────────────────────────');

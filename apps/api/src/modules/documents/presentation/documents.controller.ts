@@ -36,13 +36,13 @@ export class DocumentsController {
     const document = await this.documentsService.findById(id);
     const impactResult = await this.impactService.calculateImpact(document);
     
-    // 1. Применить каскадные обновления статусов (outdated)
+
     await this.impactService.applyImpact(impactResult);
     
-    // 2. Удалить документ (Prisma удалит связи AudienceDocument)
+
     await this.documentsService.delete(id);
     
-    // 3. Сформировать ответ и обновить статусы в памяти для корректного отчета
+
     const report = this.impactService.toReport(impactResult);
     
     report.affectedAudiences.forEach(a => a.interview.status = 'outdated' as any);

@@ -9,12 +9,12 @@ import type {
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({ 
-    // Uses NEXT_PUBLIC_API_URL or defaults to localhost:3001
+
     baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001' 
   }),
   tagTypes: ['Documents', 'Audiences', 'Pages'],
   endpoints: (builder) => ({
-    // Documents
+
     getDocuments: builder.query<Document[], void>({
       query: () => '/documents',
       providesTags: ['Documents'],
@@ -32,10 +32,10 @@ export const api = createApi({
         url: `/documents/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Documents', 'Audiences', 'Pages'], // cascade deletion impacts all
+      invalidatesTags: ['Documents', 'Audiences', 'Pages'],
     }),
 
-    // Audiences
+
     getAudiences: builder.query<Audience[], void>({
       query: () => '/audiences',
       providesTags: ['Audiences'],
@@ -49,7 +49,6 @@ export const api = createApi({
       invalidatesTags: ['Audiences'],
     }),
 
-    // Pages
     getPages: builder.query<Page[], void>({
       query: () => '/pages',
       providesTags: ['Pages'],
@@ -63,7 +62,6 @@ export const api = createApi({
       invalidatesTags: ['Pages'],
     }),
 
-    // Impact
     getImpact: builder.query<ImpactReport, string>({
       query: (docId) => `/impact/${docId}`,
       providesTags: (_result, _error, docId) => [{ type: 'Documents', id: docId }],

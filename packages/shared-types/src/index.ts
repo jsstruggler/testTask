@@ -1,4 +1,4 @@
-// ─── Enums ───────────────────────────────────────────────────────────────────
+
 
 export enum DocumentType {
   AUDIENCE = 'audience',
@@ -29,7 +29,7 @@ export enum SectionStatus {
   OUTDATED = 'outdated',
 }
 
-// ─── Interfaces ──────────────────────────────────────────────────────────────
+
 
 export interface VpcFields {
   jobs: string[];
@@ -81,7 +81,7 @@ export interface Page {
   sections: Section[];
 }
 
-// ─── API DTOs ────────────────────────────────────────────────────────────────
+
 
 export interface CreateDocumentDto {
   name: string;
@@ -109,7 +109,7 @@ export interface CreatePageDto {
   sections: CreateSectionDto[];
 }
 
-// ─── Impact Report ───────────────────────────────────────────────────────────
+
 
 export interface ImpactReport {
   document: Document;
