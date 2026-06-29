@@ -1,40 +1,72 @@
-import { Button, Popconfirm, Tag } from 'antd';
+import { useState, MouseEvent } from 'react';
+import { Button, Popconfirm, Tag, message, Form } from 'antd';
 import { FileTextOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { StatusBadge } from '@/components/ui';
-import { DocumentType, SelectedNode } from '../types';
+import { SelectedNode, DocumentFormValues } from '../types';
 import styles from '../ImpactTrailDashboard.module.scss';
-import { MouseEvent } from 'react';
+import { useGetDocumentsQuery, useDeleteDocumentMutation, useCreateDocumentMutation } from '@/store/api';
+import { DocumentModal } from './DocumentModal';
 
 interface DocumentColumnProps {
-  documents: DocumentType[];
   selectedNode: SelectedNode | null;
   highlightedDocs: Set<string>;
-  isDeleting: boolean;
-  onSelectNode: (node: SelectedNode) => void;
-  onDeleteDoc: (id: string, e?: MouseEvent<HTMLElement>) => void;
-  onOpenModal: () => void;
-  getCardClasses: (type: 'document' | 'audience' | 'page', id: string) => string;
+  onSelectNode: (node: SelectedNode | null) => void;
 }
 
 export const DocumentColumn = ({
-  documents,
-  isDeleting,
+  selectedNode,
+  highlightedDocs,
   onSelectNode,
-  onDeleteDoc,
-  onOpenModal,
-  getCardClasses
 }: DocumentColumnProps) => {
+  const { data: documents = [] } = useGetDocumentsQuery();
+  const [deleteDocument, { isLoading: isDeleting }] = useDeleteDocumentMutation();
+  const [createDocument, { isLoading: isCreatingDoc }] = useCreateDocumentMutation();
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm<DocumentFormValues>();
+
+  const getCardClasses = (id: string) => {
+    if (!selectedNode) return styles.card;
+    if (selectedNode.type === 'document' && selectedNode.id === id) {
+      return `${styles.card} ${styles.active}`;
+    }
+    return highlightedDocs.has(id) ? `${styles.card} ${styles.highlighted}` : `${styles.card} ${styles.dimmed}`;
+  };
+
+  const handleCreateDocument = async (values: DocumentFormValues) => {
+    try {
+      await createDocument(values).unwrap();
+      message.success('Document created successfully');
+      setIsModalOpen(false);
+      form.resetFields();
+    } catch (error) {
+      message.error('Failed to create document');
+    }
+  };
+
+  const handleDeleteDoc = async (id: string, e?: MouseEvent<HTMLElement>) => {
+    e?.stopPropagation();
+    try {
+      await deleteDocument(id).unwrap();
+      message.success('Document deleted successfully');
+      if (selectedNode?.id === id) {
+        onSelectNode(null);
+      }
+    } catch (error) {
+      message.error('Failed to delete document');
+    }
+  };
   return (
     <div className={styles.column}>
       <div className={`${styles.header} ${styles.headerTitle}`}>
         <h3><FileTextOutlined className={styles.headerIcon} /> Documents</h3>
-        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={onOpenModal}>Create</Button>
+        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>Create</Button>
       </div>
       <div className={styles.content}>
         {documents.map(doc => (
           <div 
             key={doc.id} 
-            className={getCardClasses('document', doc.id)}
+            className={getCardClasses(doc.id)}
             onClick={() => onSelectNode({ type: 'document', id: doc.id })}
           >
             <div className={styles.cardHeader}>
@@ -42,7 +74,7 @@ export const DocumentColumn = ({
               <Popconfirm 
                 title="Delete Document?" 
                 description="This will affect audiences and pages."
-                onConfirm={(e) => onDeleteDoc(doc.id, e)}
+                onConfirm={(e) => handleDeleteDoc(doc.id, e)}
                 onCancel={(e) => e?.stopPropagation()}
                 okText="Yes"
                 cancelText="No"
@@ -66,6 +98,14 @@ export const DocumentColumn = ({
           </div>
         ))}
       </div>
+
+      <DocumentModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateDocument}
+        isCreating={isCreatingDoc}
+        form={form}
+      />
     </div>
   );
 };

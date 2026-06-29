@@ -1,119 +1,89 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Spin } from 'antd';
-import { useImpactTrailDashboard } from './useImpactTrailDashboard';
 import { DocumentColumn } from './components/DocumentColumn';
 import { AudienceColumn } from './components/AudienceColumn';
 import { PageColumn } from './components/PageColumn';
-import { DocumentModal } from './components/DocumentModal';
-import { AudienceModal } from './components/AudienceModal';
-import { PageModal } from './components/PageModal';
+import { SelectedNode } from './types';
+import { useGetDocumentsQuery, useGetAudiencesQuery, useGetPagesQuery } from '@/store/api';
 import styles from './ImpactTrailDashboard.module.scss';
 
 export const ImpactTrailDashboard = () => {
-  const {
-    documents,
-    audiences,
-    pages,
-    isLoading,
-    isDeleting,
-    isCreatingDoc,
-    isCreatingAud,
-    isCreatingPage,
-    selectedNode,
-    setSelectedNode,
-    isDocModalOpen,
-    setIsDocModalOpen,
-    isAudModalOpen,
-    setIsAudModalOpen,
-    isPageModalOpen,
-    setIsPageModalOpen,
-    docForm,
-    audForm,
-    pageForm,
-    highlightedDocs,
-    highlightedAudiences,
-    highlightedPages,
-    handleCreateDocument,
-    handleCreateAudience,
-    handleCreatePage,
-    handleDeleteDoc,
-  } = useImpactTrailDashboard();
+  const { data: documents = [], isLoading: isLoadingDocs } = useGetDocumentsQuery();
+  const { data: audiences = [], isLoading: isLoadingAuds } = useGetAudiencesQuery();
+  const { data: pages = [], isLoading: isLoadingPages } = useGetPagesQuery();
 
-  const getCardClasses = (type: 'document' | 'audience' | 'page', id: string) => {
-    if (!selectedNode) return styles.card;
-    
-    if (selectedNode.type === type && selectedNode.id === id) {
-      return `${styles.card} ${styles.active}`;
+  const [selectedNode, setSelectedNode] = useState<SelectedNode | null>(null);
+
+  const { highlightedDocs, highlightedAudiences, highlightedPages } = useMemo(() => {
+    const docs = new Set<string>();
+    const auds = new Set<string>();
+    const pgs = new Set<string>();
+
+    if (!selectedNode) {
+      return { highlightedDocs: docs, highlightedAudiences: auds, highlightedPages: pgs };
     }
 
-    let isHighlighted = false;
-    if (type === 'document') isHighlighted = highlightedDocs.has(id);
-    if (type === 'audience') isHighlighted = highlightedAudiences.has(id);
-    if (type === 'page') isHighlighted = highlightedPages.has(id);
+    if (selectedNode.type === 'document') {
+      docs.add(selectedNode.id);
+      audiences.forEach(a => {
+        if (a.docIds?.includes(selectedNode.id)) {
+          auds.add(a.id);
+        }
+      });
+      pages.forEach(p => {
+        if (p.audienceIds?.some(aid => auds.has(aid))) {
+          pgs.add(p.id);
+        }
+      });
+    } else if (selectedNode.type === 'audience') {
+      auds.add(selectedNode.id);
+      const targetAud = audiences.find(a => a.id === selectedNode.id);
+      targetAud?.docIds?.forEach(did => docs.add(did));
+      pages.forEach(p => {
+        if (p.audienceIds?.includes(selectedNode.id)) {
+          pgs.add(p.id);
+        }
+      });
+    } else if (selectedNode.type === 'page') {
+      pgs.add(selectedNode.id);
+      const targetPage = pages.find(p => p.id === selectedNode.id);
+      targetPage?.audienceIds?.forEach(aid => {
+        auds.add(aid);
+      });
+      audiences.forEach(a => {
+        if (auds.has(a.id)) {
+          a.docIds?.forEach(did => docs.add(did));
+        }
+      });
+    }
 
-    return isHighlighted ? `${styles.card} ${styles.highlighted}` : `${styles.card} ${styles.dimmed}`;
-  };
+    return { highlightedDocs: docs, highlightedAudiences: auds, highlightedPages: pgs };
+  }, [selectedNode, documents, audiences, pages]);
 
-  if (isLoading) {
+  if (isLoadingDocs || isLoadingAuds || isLoadingPages) {
     return <div className={styles.loader}><Spin size="large" /></div>;
   }
 
   return (
     <div className={styles.container}>
       <DocumentColumn 
-        documents={documents}
         selectedNode={selectedNode}
         highlightedDocs={highlightedDocs}
-        isDeleting={isDeleting}
         onSelectNode={setSelectedNode}
-        onDeleteDoc={handleDeleteDoc}
-        onOpenModal={() => setIsDocModalOpen(true)}
-        getCardClasses={getCardClasses}
       />
       
       <AudienceColumn 
-        audiences={audiences}
         selectedNode={selectedNode}
         highlightedAudiences={highlightedAudiences}
         onSelectNode={setSelectedNode}
-        onOpenModal={() => setIsAudModalOpen(true)}
-        getCardClasses={getCardClasses}
       />
       
       <PageColumn 
-        pages={pages}
         selectedNode={selectedNode}
         highlightedPages={highlightedPages}
         onSelectNode={setSelectedNode}
-        onOpenModal={() => setIsPageModalOpen(true)}
-        getCardClasses={getCardClasses}
-      />
-
-      <DocumentModal 
-        isOpen={isDocModalOpen}
-        onClose={() => setIsDocModalOpen(false)}
-        onSubmit={handleCreateDocument}
-        isCreating={isCreatingDoc}
-        form={docForm}
-      />
-
-      <AudienceModal 
-        isOpen={isAudModalOpen}
-        onClose={() => setIsAudModalOpen(false)}
-        onSubmit={handleCreateAudience}
-        isCreating={isCreatingAud}
-        form={audForm}
-        documents={documents}
-      />
-
-      <PageModal 
-        isOpen={isPageModalOpen}
-        onClose={() => setIsPageModalOpen(false)}
-        onSubmit={handleCreatePage}
-        isCreating={isCreatingPage}
-        form={pageForm}
-        audiences={audiences}
       />
     </div>
   );

@@ -1,26 +1,65 @@
-import { Button, Collapse, Typography, Space } from 'antd';
+import { useState } from 'react';
+import { Button, Collapse, Typography, Space, message, Form } from 'antd';
 import { TeamOutlined, PlusOutlined } from '@ant-design/icons';
 import { StatusBadge } from '@/components/ui';
-import { AudienceType, SelectedNode, VpcType } from '../types';
+import { SelectedNode, VpcType, AudienceFormValues } from '../types';
 import styles from '../ImpactTrailDashboard.module.scss';
+import { useGetAudiencesQuery, useGetDocumentsQuery, useCreateAudienceMutation } from '@/store/api';
+import { AudienceModal } from './AudienceModal';
 
 const { Text } = Typography;
 
 interface AudienceColumnProps {
-  audiences: AudienceType[];
   selectedNode: SelectedNode | null;
   highlightedAudiences: Set<string>;
-  onSelectNode: (node: SelectedNode) => void;
-  onOpenModal: () => void;
-  getCardClasses: (type: 'document' | 'audience' | 'page', id: string) => string;
+  onSelectNode: (node: SelectedNode | null) => void;
 }
 
 export const AudienceColumn = ({
-  audiences,
+  selectedNode,
+  highlightedAudiences,
   onSelectNode,
-  onOpenModal,
-  getCardClasses
 }: AudienceColumnProps) => {
+  const { data: audiences = [] } = useGetAudiencesQuery();
+  const { data: documents = [] } = useGetDocumentsQuery();
+  const [createAudience, { isLoading: isCreatingAud }] = useCreateAudienceMutation();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm<AudienceFormValues>();
+
+  const getCardClasses = (id: string) => {
+    if (!selectedNode) return styles.card;
+    if (selectedNode.type === 'audience' && selectedNode.id === id) {
+      return `${styles.card} ${styles.active}`;
+    }
+    return highlightedAudiences.has(id) ? `${styles.card} ${styles.highlighted}` : `${styles.card} ${styles.dimmed}`;
+  };
+
+  const handleCreateAudience = async (values: AudienceFormValues) => {
+    try {
+      const formattedVpcs = (values.vpcs || []).map(vpc => {
+        const parseList = (str: string | undefined) => (str ? str.split(',').map(s => s.trim()).filter(Boolean) : []);
+        return {
+          ...vpc,
+          fields: {
+            jobs: parseList(vpc.fields?.jobs),
+            pains: parseList(vpc.fields?.pains),
+            gains: parseList(vpc.fields?.gains),
+            products: parseList(vpc.fields?.products),
+            painRelievers: parseList(vpc.fields?.painRelievers),
+            gainCreators: parseList(vpc.fields?.gainCreators),
+          }
+        };
+      });
+
+      await createAudience({ ...values, vpcs: formattedVpcs }).unwrap();
+      message.success('Audience created successfully');
+      setIsModalOpen(false);
+      form.resetFields();
+    } catch (error) {
+      message.error('Failed to create audience');
+    }
+  };
   const renderVpcFields = (vpc: VpcType) => {
     if (!vpc.fields) return null;
     return (
@@ -46,13 +85,13 @@ export const AudienceColumn = ({
     <div className={styles.column}>
       <div className={`${styles.header} ${styles.headerTitle}`}>
         <h3><TeamOutlined className={styles.headerIcon} /> Audiences & VPCs</h3>
-        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={onOpenModal}>Create</Button>
+        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>Create</Button>
       </div>
       <div className={styles.content}>
         {audiences.map(aud => (
           <div 
             key={aud.id} 
-            className={getCardClasses('audience', aud.id)}
+            className={getCardClasses(aud.id)}
             onClick={() => onSelectNode({ type: 'audience', id: aud.id })}
           >
             <div className={styles.cardHeader}>
@@ -82,6 +121,15 @@ export const AudienceColumn = ({
           </div>
         ))}
       </div>
+
+      <AudienceModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateAudience}
+        isCreating={isCreatingAud}
+        form={form}
+        documents={documents}
+      />
     </div>
   );
 };

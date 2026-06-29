@@ -1,37 +1,61 @@
-import { Button, Collapse, Typography } from 'antd';
+import { useState } from 'react';
+import { Button, Collapse, Typography, message, Form } from 'antd';
 import { AppstoreOutlined, PlusOutlined } from '@ant-design/icons';
 import { StatusBadge } from '@/components/ui';
-import { PageType, SelectedNode } from '../types';
+import { SelectedNode, PageFormValues } from '../types';
 import styles from '../ImpactTrailDashboard.module.scss';
+import { useGetPagesQuery, useGetAudiencesQuery, useCreatePageMutation } from '@/store/api';
+import { PageModal } from './PageModal';
 
 const { Text } = Typography;
 
 interface PageColumnProps {
-  pages: PageType[];
   selectedNode: SelectedNode | null;
   highlightedPages: Set<string>;
-  onSelectNode: (node: SelectedNode) => void;
-  onOpenModal: () => void;
-  getCardClasses: (type: 'document' | 'audience' | 'page', id: string) => string;
+  onSelectNode: (node: SelectedNode | null) => void;
 }
 
 export const PageColumn = ({
-  pages,
+  selectedNode,
+  highlightedPages,
   onSelectNode,
-  onOpenModal,
-  getCardClasses
 }: PageColumnProps) => {
+  const { data: pages = [] } = useGetPagesQuery();
+  const { data: audiences = [] } = useGetAudiencesQuery();
+  const [createPage, { isLoading: isCreatingPage }] = useCreatePageMutation();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm<PageFormValues>();
+
+  const getCardClasses = (id: string) => {
+    if (!selectedNode) return styles.card;
+    if (selectedNode.type === 'page' && selectedNode.id === id) {
+      return `${styles.card} ${styles.active}`;
+    }
+    return highlightedPages.has(id) ? `${styles.card} ${styles.highlighted}` : `${styles.card} ${styles.dimmed}`;
+  };
+
+  const handleCreatePage = async (values: PageFormValues) => {
+    try {
+      await createPage({ ...values, sections: values.sections || [] }).unwrap();
+      message.success('Page created successfully');
+      setIsModalOpen(false);
+      form.resetFields();
+    } catch (error) {
+      message.error('Failed to create page');
+    }
+  };
   return (
     <div className={styles.column}>
       <div className={`${styles.header} ${styles.headerTitle}`}>
         <h3><AppstoreOutlined className={styles.headerIcon} /> Pages & Sections</h3>
-        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={onOpenModal}>Create</Button>
+        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => setIsModalOpen(true)}>Create</Button>
       </div>
       <div className={styles.content}>
         {pages.map(page => (
           <div 
             key={page.id} 
-            className={getCardClasses('page', page.id)}
+            className={getCardClasses(page.id)}
             onClick={() => onSelectNode({ type: 'page', id: page.id })}
           >
             <div className={styles.cardHeader}>
@@ -64,6 +88,15 @@ export const PageColumn = ({
           </div>
         ))}
       </div>
+
+      <PageModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreatePage}
+        isCreating={isCreatingPage}
+        form={form}
+        audiences={audiences}
+      />
     </div>
   );
 };
